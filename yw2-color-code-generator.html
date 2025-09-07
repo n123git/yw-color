@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Yo-kai Watch Color Calculator</title>
+<style>
+  body { font-family: sans-serif; padding: 20px; }
+  input, select { margin: 5px 0; }
+  #output { margin-top: 10px; font-weight: bold; }
+  textarea { width: 300px; height: 40px; }
+</style>
+</head>
+<body>
+
+<h2>Yo-kai Watch Color Calculator</h2>
+
+<p>Yo-kai Watch has the following color formats:</p>
+<p>&lt;C0&gt; to &lt;C30&gt; of fixed color codes, &lt;C#RGB888&gt; and finally &lt;C"RGB776&gt;. This lets you convert between and select them easily!</p>
+<label for="colorPicker">Pick a color:</label>
+<input type="color" id="colorPicker" value="#aabbcc">
+
+<div>
+<label for="format">Output format:</label>
+<select id="format">
+  <option value="RGB776">&lt;C"RGB776"&gt;</option>
+  <option value="RGB888">&lt;C#RGB888&gt;</option>
+</select>
+
+<br>
+</div>
+<br/>
+<div>
+<label for="inputText">Or input &lt;C"RGB776"&gt;:</label>
+<textarea id="inputText" placeholder='e.g., <C"4EEBF>'></textarea>
+
+<br>
+</div>
+
+
+<br>
+<button id="encodeBtn">Convert / Encode</button>
+
+<div id="output"></div>
+
+<script>
+function rgb888ToRgb776(r, g, b) {
+    let r7 = Math.round(r / 255 * 127);
+    let g7 = Math.round(g / 255 * 127);
+    let b6 = Math.round(b / 255 * 63);
+    let value = (r7 << 13) | (g7 << 6) | b6;
+    let hex = value.toString(16).toUpperCase();
+    return hex.padStart(5,'0'); // 5 hex digits
+}
+
+function rgb776ToRgb888(hex776) {
+    let value = parseInt(hex776, 16);
+    let r7 = (value >> 13) & 0x7F;
+    let g7 = (value >> 6) & 0x7F;
+    let b6 = value & 0x3F;
+    let r = Math.round(r7 * 255 / 127);
+    let g = Math.round(g7 * 255 / 127);
+    let b = Math.round(b6 * 255 / 63);
+    return {r, g, b};
+}
+
+function rgbToHex(r,g,b) {
+    return ((1<<24) + (r<<16) + (g<<8) + b).toString(16).slice(1).toUpperCase();
+}
+
+document.getElementById('encodeBtn').addEventListener('click', () => {
+    const colorPicker = document.getElementById('colorPicker').value;
+    const inputText = document.getElementById('inputText').value.trim();
+    const format = document.getElementById('format').value;
+
+    let output = '';
+
+    if(inputText.startsWith('<C"') && inputText.endsWith('>')) {
+        // Decode RGB776 input
+        let hex776 = inputText.slice(3,-1); // remove <C" and >
+        let rgb = rgb776ToRgb888(hex776);
+        output = `<C#${rgbToHex(rgb.r, rgb.g, rgb.b)}>`; // no quotes
+    } else {
+        // Use color picker
+        const r = parseInt(colorPicker.substr(1,2),16);
+        const g = parseInt(colorPicker.substr(3,2),16);
+        const b = parseInt(colorPicker.substr(5,2),16);
+
+        if(format === 'RGB776') {
+            const hex776 = rgb888ToRgb776(r,g,b);
+            output = `<C"${hex776}>`;
+        } else {
+            output = `<C#${colorPicker.substr(1).toUpperCase()}>`;
+        }
+    }
+
+    document.getElementById('output').textContent = output;
+});
+</script>
+
+</body>
+</html>
